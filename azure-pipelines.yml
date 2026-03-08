@@ -1,0 +1,149 @@
+# Docker
+# Build and push an image to Azure Container Registry
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+trigger:
+- main
+pr: none
+
+resources:
+- repo: self
+
+variables:
+  # Container registry service connection established during pipeline creation
+  dockerRegistryServiceConnection: '9eedfbf3-118d-4ea4-9398-42ea266e9160'
+  imageRepository: 'company-research-backend'
+  containerRegistry: 'smartproposal.azurecr.io'
+  dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
+  tag: '$(Build.SourceVersion)'
+  azureSubscriptionServiceConnection: 'f6db4790-26d6-43aa-8003-0db6a1286069'
+  resourceGroupName: 'RG-ICG-PROD-FAB-SEA-04'
+  containerAppUatName: 'company-research-backend-uat'
+
+  # Agent VM image name
+  vmImageName: 'ubuntu-latest'
+
+stages:
+- stage: QualityChecks
+  displayName: Lint and test
+  jobs:
+  - job: LintTest
+    displayName: Ruff and pytest
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - task: UsePythonVersion@0
+      displayName: Use Python 3.11
+      inputs:
+        versionSpec: '3.11'
+        addToPath: true
+    - script: |
+        python -m pip install --upgrade pip
+        python -m pip install ".[dev]" pytest
+      displayName: Install dependencies
+    - script: |
+        ruff check .
+      displayName: Ruff check
+    - script: |
+        pytest
+        status=$?
+        if [ "$status" -eq 5 ]; then
+          echo "No tests collected; treating as success."
+          exit 0
+        fi
+        exit "$status"
+      displayName: Pytest
+
+- stage: BuildApp
+  displayName: Build and push app image
+  dependsOn: QualityChecks
+  jobs:
+  - job: BuildApp
+    displayName: Build app image
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - task: Docker@2
+      displayName: Build and push app image to container registry
+      inputs:
+        command: buildAndPush
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        arguments: --pull
+        tags: |
+          $(tag)
+
+
+- stage: DeployUat
+  displayName: Deploy to UAT Environment
+  dependsOn: BuildApp
+  condition: succeeded('BuildApp')
+  variables:
+  - group: company-research-uat-settings
+  jobs:
+  - job: UatApproval
+    displayName: Await UAT approval
+    pool: server
+    timeoutInMinutes: 1440
+    steps:
+    - task: ManualValidation@0
+      inputs:
+        instructions: Approve deployment to UAT.
+        onTimeout: reject
+  - deployment: DeployUat
+    displayName: Update company-research-backend-uat
+    dependsOn: UatApproval
+    environment: company-research-backend-uat
+    pool:
+      vmImage: $(vmImageName)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: AzureCLI@2
+            displayName: Run Alembic migrations on UAT database
+            inputs:
+              azureSubscription: $(azureSubscriptionServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                chmod +x $(System.DefaultWorkingDirectory)/scripts/run_migrations.sh
+                $(System.DefaultWorkingDirectory)/scripts/run_migrations.sh
+            env:
+              containerRegistry: $(containerRegistry)
+              imageRepository: $(imageRepository)
+              tag: $(tag)
+              MYSQL_HOST: $(MYSQL_HOST)
+              MYSQL_PORT: $(MYSQL_PORT)
+              MYSQL_USER: $(MYSQL_USER)
+              MYSQL_PASSWORD: $(MYSQL_PASSWORD)
+              MYSQL_DB: $(MYSQL_DB)
+          - task: AzureCLI@2
+            displayName: Update UAT Container App with new image
+            inputs:
+              azureSubscription: $(azureSubscriptionServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                chmod +x $(System.DefaultWorkingDirectory)/scripts/update_container_app.sh
+                IMAGE_REF="$(containerRegistry)/$(imageRepository):$(tag)" \
+                REVISION_SUFFIX="uat-$(Build.BuildId)-a$(System.JobAttempt)" \
+                CONTAINER_APP_NAME="$(containerAppUatName)" \
+                RESOURCE_GROUP_NAME="$(resourceGroupName)" \
+                  $(System.DefaultWorkingDirectory)/scripts/update_container_app.sh
+            env:
+              AZURE_OPENAI_API_KEY: $(AZURE_OPENAI_API_KEY)
+              AZURE_OPENAI_ENDPOINT: $(AZURE_OPENAI_ENDPOINT)
+              AZURE_OPENAI_API_VERSION: $(AZURE_OPENAI_API_VERSION)
+              AZURE_OPENAI_DEPLOYMENT: $(AZURE_OPENAI_DEPLOYMENT)
+              MYSQL_HOST: $(MYSQL_HOST)
+              MYSQL_PORT: $(MYSQL_PORT)
+              MYSQL_USER: $(MYSQL_USER)
+              MYSQL_PASSWORD: $(MYSQL_PASSWORD)
+              MYSQL_DB: $(MYSQL_DB)
+              APP_NAME: $(APP_NAME)
+              TAVILY_API_KEY: $(TAVILY_API_KEY)

@@ -1,0 +1,3 @@
+Research request: Corporate intelligence and inferred professional services opportunities for ThoughtWorks China.
+Objective: Infer potential professional service buying opportunities aligned with Ascentium’s service offerings (Corporate Services, Financial Services, HR Services, Private Client & Family Office, GRC & Other Services, Cross-border & FDI Specialist Services).
+Context: Support sales discovery, account planning, and opportunity qualification.
