@@ -591,74 +591,6 @@ wheels = [
 ]
 
 [[package]]
-name = "company-research"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "aiomysql" },
-    { name = "aiosqlite" },
-    { name = "alembic" },
-    { name = "deepagents" },
-    { name = "fastapi" },
-    { name = "greenlet" },
-    { name = "httpx" },
-    { name = "ipykernel" },
-    { name = "jupyter" },
-    { name = "langchain-anthropic" },
-    { name = "langchain-google-genai" },
-    { name = "langchain-openai" },
-    { name = "langchain-tavily" },
-    { name = "langgraph" },
-    { name = "langgraph-cli", extra = ["inmem"] },
-    { name = "markdownify" },
-    { name = "pageindex" },
-    { name = "pydantic" },
-    { name = "python-dotenv" },
-    { name = "rich" },
-    { name = "ruff" },
-    { name = "sqlalchemy" },
-    { name = "tavily-python" },
-    { name = "uvicorn" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "mypy" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiomysql", specifier = ">=0.2.0" },
-    { name = "aiosqlite", specifier = ">=0.19.0" },
-    { name = "alembic", specifier = ">=1.13.0" },
-    { name = "deepagents", specifier = ">=0.2.6" },
-    { name = "fastapi", specifier = ">=0.110.0" },
-    { name = "greenlet", specifier = ">=3.0.0" },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "ipykernel", specifier = ">=6.20.0" },
-    { name = "jupyter", specifier = ">=1.0.0" },
-    { name = "langchain-anthropic", specifier = ">=1.0.3" },
-    { name = "langchain-google-genai", specifier = ">=3.1.0" },
-    { name = "langchain-openai", specifier = ">=1.0.2" },
-    { name = "langchain-tavily", specifier = ">=0.2.13" },
-    { name = "langgraph", specifier = ">=1.0.3" },
-    { name = "langgraph-cli", extras = ["inmem"], specifier = ">=0.1.55" },
-    { name = "markdownify", specifier = ">=1.2.0" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.11.1" },
-    { name = "pageindex", specifier = ">=0.1.0" },
-    { name = "pydantic", specifier = ">=2.0.0" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "rich", specifier = ">=14.0.0" },
-    { name = "ruff", specifier = ">=0.14.5" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6.1" },
-    { name = "sqlalchemy", specifier = ">=2.0.0" },
-    { name = "tavily-python", specifier = ">=0.5.0" },
-    { name = "uvicorn", specifier = ">=0.27.0" },
-]
-provides-extras = ["dev"]
-
-[[package]]
 name = "cryptography"
 version = "44.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -2542,6 +2474,74 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/8b/2c/23b671c7eaf37097fe9c3c2cc925c466135d4866e2009444daf91f180fed/obstore-0.7.3-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:f97797c42476ab19853ef4a161b903eaf96c2363a23b9e0187d66b0daee350cb", size = 3976888, upload-time = "2025-08-01T22:37:55.681Z" },
     { url = "https://files.pythonhosted.org/packages/42/10/5f352e6dd1388f5c8931261357e111a6923121d937a1ebad09f4cf391418/obstore-0.7.3-cp313-cp313-win_amd64.whl", hash = "sha256:8f0ecc01b1444bc08ff98e368b80ea2c085a7783621075298e86d3aba96f8e27", size = 4050018, upload-time = "2025-08-01T22:37:57.285Z" },
 ]
+
+[[package]]
+name = "odi-knowledge-backend"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "aiomysql" },
+    { name = "aiosqlite" },
+    { name = "alembic" },
+    { name = "deepagents" },
+    { name = "fastapi" },
+    { name = "greenlet" },
+    { name = "httpx" },
+    { name = "ipykernel" },
+    { name = "jupyter" },
+    { name = "langchain-anthropic" },
+    { name = "langchain-google-genai" },
+    { name = "langchain-openai" },
+    { name = "langchain-tavily" },
+    { name = "langgraph" },
+    { name = "langgraph-cli", extra = ["inmem"] },
+    { name = "markdownify" },
+    { name = "pageindex" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "rich" },
+    { name = "ruff" },
+    { name = "sqlalchemy" },
+    { name = "tavily-python" },
+    { name = "uvicorn" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiomysql", specifier = ">=0.2.0" },
+    { name = "aiosqlite", specifier = ">=0.19.0" },
+    { name = "alembic", specifier = ">=1.13.0" },
+    { name = "deepagents", specifier = ">=0.2.6" },
+    { name = "fastapi", specifier = ">=0.110.0" },
+    { name = "greenlet", specifier = ">=3.0.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "ipykernel", specifier = ">=6.20.0" },
+    { name = "jupyter", specifier = ">=1.0.0" },
+    { name = "langchain-anthropic", specifier = ">=1.0.3" },
+    { name = "langchain-google-genai", specifier = ">=3.1.0" },
+    { name = "langchain-openai", specifier = ">=1.0.2" },
+    { name = "langchain-tavily", specifier = ">=0.2.13" },
+    { name = "langgraph", specifier = ">=1.0.3" },
+    { name = "langgraph-cli", extras = ["inmem"], specifier = ">=0.1.55" },
+    { name = "markdownify", specifier = ">=1.2.0" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.11.1" },
+    { name = "pageindex", specifier = ">=0.1.0" },
+    { name = "pydantic", specifier = ">=2.0.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "rich", specifier = ">=14.0.0" },
+    { name = "ruff", specifier = ">=0.14.5" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6.1" },
+    { name = "sqlalchemy", specifier = ">=2.0.0" },
+    { name = "tavily-python", specifier = ">=0.5.0" },
+    { name = "uvicorn", specifier = ">=0.27.0" },
+]
+provides-extras = ["dev"]
 
 [[package]]
 name = "openai"
