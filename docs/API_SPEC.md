@@ -510,7 +510,7 @@ if [ -n "$SESSION_ID" ]; then
   echo -e "\n=== 3. Completions (stream, first 2K) ==="
   curl -N -s -X POST "$BASE/api/v1/completions" \
     -H "Content-Type: application/json" \
-    -d "{\"session_id\": \"$SESSION_ID\", \"question\": \"知识库有哪些大类的资料？\", \"stream\": true}" \
+    -d "{\"session_id\": \"$SESSION_ID\", \"question\": \"越南工业园区有哪些？\", \"stream\": true}" \
     | head -c 2048
 fi
 ```
@@ -545,23 +545,107 @@ Collected 2 process events
 
 ---
 
-## 6. 汇总表
+## 6. Knowledge Source 知识溯源
 
-| 方法   | 路径                                   | 说明           |
-|--------|----------------------------------------|----------------|
-| GET    | `/health`                              | 健康检查       |
-| POST   | `/api/v1/sessions`                     | 创建会话       |
-| GET    | `/api/v1/sessions`                     | 会话列表       |
-| GET    | `/api/v1/sessions/{session_id}`        | 获取单个会话   |
-| PUT    | `/api/v1/sessions/{session_id}`        | 重命名会话     |
-| PUT    | `/api/v1/sessions/{session_id}/status` | 更新会话状态   |
-| DELETE | `/api/v1/sessions`                     | 删除会话       |
-| GET    | `/api/v1/sessions/{session_id}/messages` | 消息列表     |
-| POST   | `/api/v1/completions`                  | 聊天补全（流式/非流式） |
+### 6.1 获取文档内容
+
+**`GET /api/v1/knowledge/source`**
+
+根据文件名获取知识库文档的 OCR 内容，供前端在引用链接点击后展示。
+
+| 项目   | 说明                                                         |
+|--------|--------------------------------------------------------------|
+| 描述   | 按文件名获取文档 OCR（markdown）内容                         |
+| Query  | `file`（必填）：文件名，须与 `list_pageindex_documents` 返回的 `name` 完全一致 |
+| 成功   | 200，`data` 为文档内容                                       |
+| 失败   | 400 / 404 / 502 / 503                                        |
+
+**Query 参数**
+
+| 参数   | 类型   | 必填 | 说明                                         |
+|--------|--------|------|----------------------------------------------|
+| file   | string | 是   | 文档文件名，如 `Guides_ASEAN 6 wide.pdf`     |
+
+**成功响应 (200)**
+
+```json
+{
+  "code": 200,
+  "data": {
+    "doc_id": "pi-cmmhbhmfd01p8faqnsw3ghlcc",
+    "doc_name": "Guides_ASEAN 6 wide.pdf",
+    "pages": [
+      {
+        "page_index": 1,
+        "markdown": "...",
+        "images": []
+      },
+      {
+        "page_index": 2,
+        "markdown": "...",
+        "images": []
+      }
+    ],
+    "total_pages": 42
+  }
+}
+```
+
+| 字段        | 类型   | 说明                                      |
+|-------------|--------|-------------------------------------------|
+| doc_id      | string | PageIndex 文档 ID                         |
+| doc_name    | string | 文档名称                                  |
+| pages       | array  | 按页的 OCR 结果数组                       |
+| pages[].page_index | int  | 页码（1-based）                    |
+| pages[].markdown   | string | 该页 OCR 文本（Markdown）        |
+| pages[].images     | array  | 该页图片 base64 数组（可为空）   |
+| total_pages | int    | 总页数                                    |
+
+**错误响应**
+
+| 状态码 | 场景                   | 示例                                                         |
+|--------|------------------------|--------------------------------------------------------------|
+| 400    | 缺少 file 参数         | `{"code": 400, "message": "Missing required parameter: file"}` |
+| 404    | 文档未找到             | `{"code": 404, "message": "Document not found: xxx.pdf"}`    |
+| 502    | PageIndex 调用失败     | `{"code": 502, "message": "Failed to fetch document content from PageIndex"}` |
+| 503    | 知识库未配置           | `{"code": 503, "message": "Knowledge base not available"}`   |
+
+**前端对接说明**
+
+1. **引用解析**：从 AI 回复中抽取 `《》` 之间的内容作为 `filename`，正则：`《([^》]+)》`
+2. **构建链接**：`${BASE_URL}/api/v1/knowledge/source?file=${encodeURIComponent(filename)}`
+3. **展示**：将 `《文件名》` 渲染为可点击链接，点击后请求该 API，用 Markdown 渲染 `data.pages` 内容
+
+**示例**
+
+```
+# 请求
+GET /api/v1/knowledge/source?file=Guides_ASEAN%206%20wide.pdf
+
+# 成功
+{"code": 200, "data": {"doc_id": "pi-xxx", "doc_name": "Guides_ASEAN 6 wide.pdf", "pages": [...], "total_pages": 42}}
+```
 
 ---
 
-## 7. 字段命名约定
+## 7. 汇总表
+
+| 方法   | 路径                                   | 说明                         |
+|--------|----------------------------------------|------------------------------|
+| GET    | `/health`                              | 健康检查                     |
+| POST   | `/api/v1/sessions`                     | 创建会话                     |
+| GET    | `/api/v1/sessions`                     | 会话列表                     |
+| GET    | `/api/v1/sessions/{session_id}`        | 获取单个会话                 |
+| PUT    | `/api/v1/sessions/{session_id}`        | 重命名会话                   |
+| PUT    | `/api/v1/sessions/{session_id}/status` | 更新会话状态                 |
+| DELETE | `/api/v1/sessions`                     | 删除会话                     |
+| GET    | `/api/v1/sessions/{session_id}/messages` | 消息列表                   |
+| POST   | `/api/v1/completions`                  | 聊天补全（流式/非流式）      |
+| GET    | `/api/v1/knowledge/source`             | 按文件名获取知识库文档内容   |
+
+---
+
+## 8. 字段命名约定
 
 - API 请求/响应使用 snake_case：`session_id`、`file_urls`、`question_id`
 - 序列化输出中部分字段使用小写：`fileurls`、`answer_id`、`question_id`（与现有前端约定一致）

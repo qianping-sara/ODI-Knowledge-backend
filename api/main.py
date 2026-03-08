@@ -4,7 +4,7 @@ import logging
 
 from fastapi import FastAPI
 
-from api.routes import completions, messages, sessions
+from api.routes import completions, knowledge, messages, sessions
 from core.config import get_app_name
 from core.database import init_engine
 from models.entities import Base
@@ -40,6 +40,7 @@ def create_app() -> FastAPI:
     app.include_router(sessions.router)
     app.include_router(messages.router)
     app.include_router(completions.router)
+    app.include_router(knowledge.router)
 
     @app.get("/health", tags=["health"])
     async def health_check():

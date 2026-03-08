@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # Retry config for 504 Gateway Timeout (common when many parallel queries hit PageIndex)
 PAGEINDEX_RETRY_COUNT = 3
-PAGEINDEX_RETRY_DELAY_SEC = 2.0
+PAGEINDEX_RETRY_DELAY_SEC = 1.0
 
 # Request counter for correlating parallel requests (thread-safe)
 _request_counter = 0
@@ -64,6 +64,57 @@ class PageIndexCache:
         except Exception as e:
             logger.error(f"❌ Failed to load PageIndex documents: {e}")
             self.documents = []
+
+    def find_doc_id_by_filename(self, filename: str) -> Optional[str]:
+        """Find doc_id in cache by filename (exact match, case-insensitive).
+
+        Args:
+            filename: Document name to look up (must match list_documents name).
+
+        Returns:
+            doc_id or None if not found.
+        """
+        if not filename or not self.documents:
+            return None
+        target = filename.strip().lower()
+        for doc in self.documents:
+            name = (doc.get("name") or "").strip().lower()
+            if name == target:
+                return doc.get("id") or doc.get("doc_id")
+        return None
+
+    def get_page_content(self, doc_id: str) -> dict:
+        """Get full OCR content of a document via PageIndex API.
+
+        Args:
+            doc_id: PageIndex document ID.
+
+        Returns:
+            {"pages": [...], "total_pages": int, "status": str}
+            Each page: {page_index (1-based), markdown, images}.
+
+        Raises:
+            PageIndexAPIError or other on API failure.
+        """
+        if not self.client:
+            return {"pages": [], "total_pages": 0, "status": "unavailable"}
+        response = self.client.get_ocr(doc_id, format="page")
+        status = response.get("status", "unknown")
+        result = response.get("result") or []
+        if status != "completed":
+            logger.warning(f"Document {doc_id} status={status}, result may be empty")
+        pages = []
+        for item in result:
+            pages.append({
+                "page_index": item.get("page_index", 0),
+                "markdown": item.get("markdown", ""),
+                "images": item.get("images") or [],
+            })
+        return {
+            "pages": pages,
+            "total_pages": len(pages),
+            "status": status,
+        }
 
     def get_document_list(self) -> str:
         """Return formatted document list for LLM consumption.
