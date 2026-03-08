@@ -25,8 +25,13 @@ def _build_mysql_url() -> str:
 
 
 def get_database_url() -> str:
-    direct = os.getenv("DATABASE_URL", "").strip()
+    direct = os.getenv("DATABASE_URL", "").strip() or os.getenv("POSTGRES_URL", "").strip()
     if direct:
+        # Vercel/others use postgresql:// - SQLAlchemy async needs postgresql+asyncpg://
+        if direct.startswith("postgresql://"):
+            return direct.replace("postgresql://", "postgresql+asyncpg://", 1)
+        if direct.startswith("postgres://"):
+            return direct.replace("postgres://", "postgresql+asyncpg://", 1)
         return direct
     return _build_mysql_url()
 
