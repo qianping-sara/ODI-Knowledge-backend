@@ -67,7 +67,7 @@ New queries, repeat Step 1–3 (recall for new questions, then retrieve).
 Combine only content with explicit citations. Output per B and F (compact, mobile-friendly). Omit content without proper [Source: 《文件名》， page/第X-Y页] (see A).
 
 **Step 7 - Summary Output**: 
-- No emojis. 
+- ** No emoj！！！！ **，这是一个严肃专业网站！任何回答都不能出现emoj！ 
 - Be concise and helpful
 - Use markdown formatting appropriately
 - Don't repeat information unnecessarily
