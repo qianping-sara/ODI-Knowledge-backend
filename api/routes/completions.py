@@ -92,10 +92,20 @@ async def completions(
 
         task = asyncio.create_task(run_flow())
 
+        # Keepalive interval (seconds) - prevents proxy/load-balancer from closing
+        # the connection during long tool execution (e.g. PageIndex query 30-60s+)
+        SSE_KEEPALIVE_INTERVAL = 15
+
         async def event_stream():
             try:
                 while True:
-                    event = await queue.get()
+                    try:
+                        event = await asyncio.wait_for(
+                            queue.get(), timeout=SSE_KEEPALIVE_INTERVAL
+                        )
+                    except asyncio.TimeoutError:
+                        yield ": keepalive\n\n"
+                        continue
                     yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
                     if event.get("data") is True:
                         break

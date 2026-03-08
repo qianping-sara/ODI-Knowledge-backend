@@ -48,7 +48,7 @@ except Exception as e:
 # Test 5: Test a simple query
 print("\nTest 5: Testing a simple query...")
 try:
-    result = pageindex_cache.query("越南设厂案例?（请确保你的答案包含知识来源详细说明，文件名/内容相关页码")
+    result = pageindex_cache.query("越南有哪些主要工业园区？请确保回答包含知识来源说明（文件名及页码）。")
     print(f"✅ Query successful:")
     print(result[:500] + "..." if len(result) > 500 else result)
 except Exception as e:

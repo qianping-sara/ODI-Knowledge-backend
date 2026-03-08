@@ -491,7 +491,57 @@ data: {"code": 0, "data": true}
 - 流式模式使用 `send_chat_message_stream` → `run_agent_stream`，基于 `agent.stream(stream_mode="updates")` 解析 model/tools 节点。
 - 非流式模式仍使用 `run_agent` + `invoke()`，不推送 process 事件。
 
-**详细设计**：见 [TOOL_PROCESS_STREAMING_DESIGN.md](./TOOL_PROCESS_STREAMING_DESIGN.md)。
+
+### 运行检查脚本你能看到结果范围
+```
+BASE="https://odi-knowledge-backend.vercel.app"
+
+# 1. 健康检查
+echo "=== 1. Health check ==="
+curl -s "$BASE/health"
+
+echo -e "\n\n=== 2. Create session ==="
+SESSION_RESP=$(curl -s -X POST "$BASE/api/v1/sessions" -H "Content-Type: application/json" -d '{}')
+echo "$SESSION_RESP" | head -c 500
+SESSION_ID=$(echo "$SESSION_RESP" | jq -r '.data.id // empty')
+echo -e "\nSESSION_ID=$SESSION_ID"
+
+if [ -n "$SESSION_ID" ]; then
+  echo -e "\n=== 3. Completions (stream, first 2K) ==="
+  curl -N -s -X POST "$BASE/api/v1/completions" \
+    -H "Content-Type: application/json" \
+    -d "{\"session_id\": \"$SESSION_ID\", \"question\": \"知识库有哪些大类的资料？\", \"stream\": true}" \
+    | head -c 2048
+fi
+```
+```
+qianping@QiandeMacBook-Pro company-research % uv run python test_run_agent_stream.py
+Calling run_agent_stream with a simple question...
+2026-03-08 14:15:18,583 INFO [agent.research.pageindex_cache] ✅ Loaded 19 PageIndex documents into cache
+2026-03-08 14:15:18,874 INFO [agent.agent_adapter] [Agent] STREAM START user_message='有多少份文档？' (history_len=1)
+2026-03-08 14:15:28,060 INFO [httpx] HTTP Request: POST https://smart-sales.cognitiveservices.azure.com/openai/deployments/gpt-5.2-chat/chat/completions?api-version=2025-04-01-preview "HTTP/1.1 200 OK"
+2026-03-08 14:15:28,069 INFO [agent.agent_adapter] [Agent] process event subtype=tool_start tool=list_pageindex_documents tool_call_id=call_MxSPIafvyfbiGctAXjoc9rXg
+[CALLBACK] subtype=tool_start tool=list_pageindex_documents tool_call_id=call_MxSPIafvyfbiGctAXjoc9rXg
+2026-03-08 14:15:28,069 INFO [agent.agent_adapter] [Agent] tool_start tool_name=list_pageindex_documents tool_call_id=call_MxSPIafvyfbiGctAXjoc9rXg input={}
+2026-03-08 14:15:28,071 INFO [agent.agent_adapter] [Agent] process event subtype=tool_end tool=list_pageindex_documents tool_call_id=call_MxSPIafvyfbiGctAXjoc9rXg
+[CALLBACK] subtype=tool_end tool=list_pageindex_documents tool_call_id=call_MxSPIafvyfbiGctAXjoc9rXg
+2026-03-08 14:15:28,071 INFO [agent.agent_adapter] [Agent] tool_end tool_name=list_pageindex_documents tool_call_id=call_MxSPIafvyfbiGctAXjoc9rXg output_len=6046 preview=Available PageIndex Knowledge Base Documents (id | name | description):
+
+**pi-cmmhbhu7601pafaqnqxypm18h**: Guide直接投资和间接…
+2026-03-08 14:15:36,247 INFO [httpx] HTTP Request: POST https://smart-sales.cognitiveservices.azure.com/openai/deployments/gpt-5.2-chat/chat/completions?api-version=2025-04-01-preview "HTTP/1.1 200 OK"
+2026-03-08 14:15:36,248 INFO [agent.agent_adapter] [Agent] final AIMessage len=184 preview=根据当前 **PageIndex 知识库文档清单**统计：
+
+- **共有 20 份文档**
+
+**知识来源说明：**  
+- 来源：PageIndex 知识…
+2026-03-08 14:15:36,249 INFO [agent.agent_adapter] [Agent] STREAM END response_len=184
+
+Final answer length: 184
+Collected 2 process events
+  1. tool_start list_pageindex_documents call_MxSPIafvyfbiGct...
+  2. tool_end list_pageindex_documents call_MxSPIafvyfbiGct...
+```
 
 ---
 
