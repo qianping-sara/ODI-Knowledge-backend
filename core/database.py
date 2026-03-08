@@ -4,7 +4,7 @@ from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from core.config import get_database_url
+from core.config import get_database_url, use_postgres
 
 _ENGINE = None
 _SESSION_FACTORY: async_sessionmaker[AsyncSession] | None = None
@@ -13,7 +13,12 @@ _SESSION_FACTORY: async_sessionmaker[AsyncSession] | None = None
 def init_engine():
     global _ENGINE, _SESSION_FACTORY  # noqa: PLW0603
     if _ENGINE is None:
-        _ENGINE = create_async_engine(get_database_url(), future=True, pool_pre_ping=True)
+        url = get_database_url()
+        kwargs = {"future": True, "pool_pre_ping": True}
+        if use_postgres():
+            # asyncpg needs ssl=True for Vercel Postgres (sslmode stripped from URL)
+            kwargs["connect_args"] = {"ssl": True}
+        _ENGINE = create_async_engine(url, **kwargs)
         _SESSION_FACTORY = async_sessionmaker(_ENGINE, expire_on_commit=False)
     return _ENGINE
 

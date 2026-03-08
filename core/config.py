@@ -29,11 +29,30 @@ def get_database_url() -> str:
     if direct:
         # Vercel/others use postgresql:// - SQLAlchemy async needs postgresql+asyncpg://
         if direct.startswith("postgresql://"):
-            return direct.replace("postgresql://", "postgresql+asyncpg://", 1)
-        if direct.startswith("postgres://"):
-            return direct.replace("postgres://", "postgresql+asyncpg://", 1)
-        return direct
+            url = direct.replace("postgresql://", "postgresql+asyncpg://", 1)
+        elif direct.startswith("postgres://"):
+            url = direct.replace("postgres://", "postgresql+asyncpg://", 1)
+        else:
+            return direct
+
+        # asyncpg doesn't support sslmode in URL - strip it and use connect_args instead
+        from urllib.parse import urlparse, urlencode, parse_qs, urlunparse
+
+        parsed = urlparse(url)
+        if parsed.query:
+            params = parse_qs(parsed.query, keep_blank_values=True)
+            params.pop("sslmode", None)
+            params.pop("ssl", None)
+            new_query = urlencode(params, doseq=True)
+            url = urlunparse(parsed._replace(query=new_query))
+        return url
     return _build_mysql_url()
+
+
+def use_postgres() -> bool:
+    """True if DATABASE_URL/POSTGRES_URL points to PostgreSQL."""
+    direct = os.getenv("DATABASE_URL", "").strip() or os.getenv("POSTGRES_URL", "").strip()
+    return direct.startswith("postgresql://") or direct.startswith("postgres://")
 
 
 def get_app_name() -> str:
